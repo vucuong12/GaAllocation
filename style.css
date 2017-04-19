@@ -1,0 +1,42 @@
+canvas {
+
+    /*padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;*/
+    display: block;
+}
+
+.popup_msg{
+	position:absolute;
+	z-index:10;
+	width:172px;
+	height:102px;
+	padding-left: 20px;
+	color:#FF0000;
+	font: 14px Verdana, Arial, Helvetica, sans-serif;
+	display:none;
+	background: transparent;
+}
+
+#circle {
+	position:absolute;
+	border: solid;
+	z-index: 5;
+    background: transparent;
+    -moz-border-radius: 50px;
+    -webkit-border-radius: 50px;
+    display: none;
+}
+
+.stats, .all, .best {
+  font-family: "Courier";
+}
+
+.best {
+  font-size: 48;
+}
+
+.stats {
+  font-size: 24;
+}
