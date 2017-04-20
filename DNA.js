@@ -1,7 +1,11 @@
+var PEN_CONST = 0.5;
+
+
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-function newType(DNANumTypes) {
+function newType(DNANumTypes, geneIndex) {
+
   return getRandomInt(0, DNANumTypes);
 }
 
@@ -14,7 +18,11 @@ function DNA(clients, resources) {
   // The genetic sequence
   this.genes = [];
 
-
+  this.isValid = true;
+  this.nTotalValidCon = 0;
+  this.nCapacityViolations = 0;
+  this.nConnectedClients = 0;
+ 
 
   this.fitness = 0;
   for (var i = 0; i < this.clients.length; i++) {
@@ -31,8 +39,85 @@ function DNA(clients, resources) {
     }
   }
 
+  this.calcFitness1 = function() {
+
+  }
+  /*
+    isValid, nConnectedClients, total number of valid connections, number of violations of capacity constraint, 
+    (maybe) nConnections excluding satisfied services
+  */
+  this.calFactors = function(){
+    this.isValid = true;
+    this.nTotalValidCon = 0;
+    this.nCapacityViolations = 0;
+    this.nConnectedClients = 0;
+
+    var numClientsPerResource = [];
+    
+    this.matchingClients = [];
+
+    for (var i = 0; i < this.resources.length; i++){
+      numClientsPerResource.push(0);
+    }
+
+    var geneIndex = -1;
+    for (var clientID = 0; clientID < this.clients.length; clientID++){
+      var haveEnoughResources = true;
+      var matchedResources = [];
+      for (var j = 0; j < this.clients[clientID].services.length; j++){
+        geneIndex += 1;
+        var serviceType = this.clients[clientID].services[j]; //resource type for this service
+        var matchedResourceID = this.genes[geneIndex];
+
+        //console.log("check valid " + clients[clientID].nearbyResources.indexOf(matchedResourceID))
+        if (clients[clientID].nearbyResources.indexOf(matchedResourceID) === -1 || serviceType !== this.resources[matchedResourceID].type){
+          this.isValid = false;
+          haveEnoughResources = false;
+        } else {
+          this.nTotalValidCon++;
+          numClientsPerResource[matchedResourceID] += 1;
+          matchedResources.push(matchedResourceID);
+        }
+      }
+      if (haveEnoughResources){
+        this.nConnectedClients += 1;
+        this.matchingClients.push(matchedResources);
+      } else {
+        this.matchingClients.push([]);
+      }
+    }
+
+    //Calculate nCapacityViolations
+    for (var i = 0; i < this.resources.length; i++){
+      this.nCapacityViolations += Math.max(0, numClientsPerResource[i] - this.resources[i].maxClient);
+    }
+  }
+
   // Fitness function (returns floating point % of "correct" characters)
   this.calcFitness = function() {
+    this.calFactors();
+   /* console.log("Factors are ");
+    console.log("IsValid = " + this.isValid);
+    console.log("nTotalValidCon = " + this.nTotalValidCon);
+    console.log("nCapacityViolations = " + this.nCapacityViolations);
+    console.log("nConnectedClients = " + this.nConnectedClients);
+    console.log("    ");  */
+    var res = 0;
+    if (!this.isValid || this.nCapacityViolations > 0){
+      res = this.nTotalValidCon - PEN_CONST * this.nCapacityViolations;
+      //console.log("Not valid");
+    } else {
+      console.log("Valid");
+      var VALID_CONST = this.clients.length;
+      res = VALID_CONST * 1000 + (VALID_CONST * this.nConnectedClients + this.nTotalValidCon);
+    }
+    
+    this.fitness = res;
+    this.maxClients = this.nConnectedClients;
+    return;
+
+
+
     
     var score = 0.0;
     var geneIndex = 0;

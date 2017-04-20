@@ -1,8 +1,12 @@
+var POP_MAX = 200;
+var MUTATION_RATE = 0.01
+
+
 function GA(clients, resources){
 	this.clients = clients;
 	this.resources = resources;
-	this.popmax = 200;
-	this.mutationRate = 0.01;
+	this.popmax = POP_MAX;
+	this.mutationRate = MUTATION_RATE;
 	this.population = new Population(this.clients, this.resources, this.mutationRate, this.popmax);
 	this.updateDataset = function (clients, resources){
 		this.clients = clients;
@@ -32,8 +36,15 @@ function GA(clients, resources){
 
 	this.displayInfo = function() {
 
+
 	  	// Display current status of population
 	  	var answer = this.population.getBest(); // {maxClients, matchingClients: [[R1,R2],[R2,],[R1]]}
+	  	//console.log(this.generations())
+	  	if (this.population.getGenerations() % 500 === 0){
+			console.log("Generation " + this.getGenerations);
+			console.log("Number of connected clients = " + answer.maxClients)
+			console.log("---------------")
+		}
 	  	$("#maxNumClients").html("Max number of clients:<br>" + answer.maxClients);
 
 	  	//Matching result

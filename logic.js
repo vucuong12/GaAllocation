@@ -1,14 +1,14 @@
 $( document ).ready(function() {
 	var RESOURCE_RADIUS = 5;
 	var CLIENT_RADIUS = 7.5;
-	var CANVAS_WIDTH = 800;
-	var CANVAS_HEIGHT = 600;
+	var CANVAS_WIDTH = 600;
+	var CANVAS_HEIGHT = 400;
 	/*------------------*/
-	var NUM_RESOURCES = 10;
-	var NUM_CLIENTS = 4;
-	var SERVICE_TYPES = 3;
-	var MAX_CLIENTS_PER_RESOURCE = 30;
-	var MAX_RANGE_PER_CLIENT = 400;
+	var NUM_RESOURCES = 15;
+	var NUM_CLIENTS = 30;
+	var SERVICE_TYPES = 4;
+	var MAX_CLIENTS_PER_RESOURCE = 40;
+	var MAX_RANGE_PER_CLIENT = 200;
 	/*------------------*/
 	var geneticAlgorithm = new GA([],[]);
 
