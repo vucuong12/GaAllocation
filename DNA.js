@@ -1,53 +1,65 @@
-var PEN_CONST = 0.5;
+
 
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-function newType(DNANumTypes, geneIndex) {
 
-  return getRandomInt(0, DNANumTypes);
-}
 
 // Constructor (makes a random DNA)
-function DNA(clients, resources) {
+function DNA(clients, resources, nearbyResForClientByType) {
   this.clients = clients;
   this.resources = resources;
   this.maxClients = 0;
   this.matchingClients = [];
+
+  this.nearbyResForClientByType = nearbyResForClientByType;
+
+
+
   // The genetic sequence
   this.genes = [];
 
-  this.isValid = true;
+
   this.nTotalValidCon = 0;
   this.nCapacityViolations = 0;
   this.nConnectedClients = 0;
  
 
   this.fitness = 0;
+  
+  
+  
+
+  this.newType = function(clientID, resourceType) {
+    var randomIndex = getRandomInt(0, this.nearbyResForClientByType[clientID][resourceType].length - 1);
+    var res = this.nearbyResForClientByType[clientID][resourceType][randomIndex];
+    //console.log("---------Wrong type " + res);
+    return res;
+  }
+
   for (var i = 0; i < this.clients.length; i++) {
     for (var j = 0; j < this.clients[i].services.length; j++){
-      this.genes.push(newType(this.resources.length)); 
+      this.genes.push(this.newType(i, this.clients[i].services[j])); 
     }
     
   }
 
+  
+
   this.getMatching = function(){
-    return {
-      "maxClients": this.maxClients,
-      "matchingClients": this.matchingClients
-    }
+    return this
   }
 
   this.calcFitness1 = function() {
 
   }
   /*
-    isValid, nConnectedClients, total number of valid connections, number of violations of capacity constraint, 
+    nConnectedClients, total number of valid connections, number of violations of capacity constraint, 
     (maybe) nConnections excluding satisfied services
   */
   this.calFactors = function(){
-    this.isValid = true;
+
     this.nTotalValidCon = 0;
     this.nCapacityViolations = 0;
     this.nConnectedClients = 0;
@@ -68,10 +80,7 @@ function DNA(clients, resources) {
         geneIndex += 1;
         var serviceType = this.clients[clientID].services[j]; //resource type for this service
         var matchedResourceID = this.genes[geneIndex];
-
-        //console.log("check valid " + clients[clientID].nearbyResources.indexOf(matchedResourceID))
-        if (clients[clientID].nearbyResources.indexOf(matchedResourceID) === -1 || serviceType !== this.resources[matchedResourceID].type){
-          this.isValid = false;
+        if (matchedResourceID === -1){ //One service is not matched with any resource
           haveEnoughResources = false;
         } else {
           this.nTotalValidCon++;
@@ -103,17 +112,18 @@ function DNA(clients, resources) {
     console.log("nConnectedClients = " + this.nConnectedClients);
     console.log("    ");  */
     var res = 0;
-    if (!this.isValid || this.nCapacityViolations > 0){
+    if (this.nCapacityViolations > 0){
       res = this.nTotalValidCon - PEN_CONST * this.nCapacityViolations;
-      //console.log("Not valid");
+      //console.log("Not valid " + this.isValid + " " + this.nCapacityViolations);
     } else {
-      console.log("Valid");
+      //console.log("Valid");
       var VALID_CONST = this.clients.length;
-      res = VALID_CONST * 1000 + (VALID_CONST * this.nConnectedClients + this.nTotalValidCon);
+      res = VALID_CONST * this.nConnectedClients + this.nTotalValidCon;
     }
     
     this.fitness = res;
     this.maxClients = this.nConnectedClients;
+
     return;
 
 
@@ -162,7 +172,7 @@ function DNA(clients, resources) {
   // Crossover
   this.crossover = function(partner) {
     // A new child
-    var child = new DNA(this.clients, this.resources);
+    var child = new DNA(this.clients, this.resources, this.nearbyResForClientByType);
     
     var midpoint = Math.floor(Math.random() * (this.genes.length)); // Pick a midpoint
     
@@ -177,9 +187,14 @@ function DNA(clients, resources) {
 
   // Based on a mutation probability, picks a new random character
   this.mutate = function(mutationRate) {
-    for (var i = 0; i < this.genes.length; i++) {
-      if (Math.random() < mutationRate) {
-        this.genes[i] = newType(this.resources.length);
+    var geneIndex = -1;
+    for (var clientID = 0; clientID < this.clients.length; clientID++){
+      for (var j = 0; j < this.clients[clientID].services.length; j++){
+        geneIndex++;
+        var resourceType = this.clients[clientID].services[j];
+        if (Math.random() < mutationRate) {
+          this.genes[geneIndex] = this.newType(clientID, resourceType);
+        }  
       }
     }
   }

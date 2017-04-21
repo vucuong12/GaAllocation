@@ -1,16 +1,8 @@
 $( document ).ready(function() {
-	var RESOURCE_RADIUS = 5;
-	var CLIENT_RADIUS = 7.5;
-	var CANVAS_WIDTH = 600;
-	var CANVAS_HEIGHT = 400;
-	/*------------------*/
-	var NUM_RESOURCES = 15;
-	var NUM_CLIENTS = 30;
-	var SERVICE_TYPES = 4;
-	var MAX_CLIENTS_PER_RESOURCE = 40;
-	var MAX_RANGE_PER_CLIENT = 200;
+	
 	/*------------------*/
 	var geneticAlgorithm = new GA([],[]);
+	var bestResult = {};
 
 	var resources = [];
 	var clients = [];
@@ -96,6 +88,7 @@ $( document ).ready(function() {
 				}
 			}
 			var newResource = {
+				resourceID: i,
 				location:[x,y],
 				maxClients: random(1, MAX_CLIENTS_PER_RESOURCE),
 				serviceType: random(0, SERVICE_TYPES - 1)
@@ -128,6 +121,7 @@ $( document ).ready(function() {
 
 			}
 			var newClient = {
+				clientID: i,
 				location: [x, y],
 				services: randomServices,
 				radius: MAX_RANGE_PER_CLIENT
@@ -135,6 +129,39 @@ $( document ).ready(function() {
 			clients.push(newClient);
 		}
 	}
+
+	function removeInvalidClients() {
+		for (var clientID = clients.length - 1; clientID >= 0; clientID--){
+			var needToRemove = false;
+			var badType = "None";
+			for (var i = 0; i < clients[clientID].services.length; i++){
+				var resourceType = clients[clientID].services[i];
+				var hasNearby = false;
+
+				for (var j = 0; j < resources.length; j++){
+					if (resourceType === resources[j].serviceType && insideCirle(resources[j].location[0], resources[j].location[1], clients[clientID].location[0], clients[clientID].location[1], clients[clientID].radius)){
+						hasNearby = true;
+						break;
+					}
+				}
+
+				if (!hasNearby){
+					badType = resourceType;
+					needToRemove = true;
+					break;
+				}
+			}
+			if (needToRemove){
+				clients.splice(clientID, 1);	
+			} 
+		}
+
+		for (var clientID = clients.length - 1; clientID >= 0; clientID--){
+			clients[clientID].clientID = clientID;
+		}
+	}
+
+	
 
 	function findNodeAtXY(x, y){
 		for (var i = 0; i < clients.length; i++){
@@ -179,10 +206,13 @@ $( document ).ready(function() {
 	}
 
 	function drawMatching(){
+		if (bestResult.nCapacityViolations > 0){
+			return;
+		}
 		for (var clientID = 0; clientID < matchingResult.length; clientID++){
 			var clientX = clients[clientID].location[0];
 			var clientY = clients[clientID].location[1];
-
+			
 			for (var j = 0; j < matchingResult[clientID].length; j++){
 				var resourceID = matchingResult[clientID][j];
 				var resourceX = resources[resourceID].location[0];
@@ -222,10 +252,20 @@ $( document ).ready(function() {
 	}
 
 	function createDatasetFromMap(){
+		drawClients()
+		drawResources()
+		removeInvalidClients()
+		
 	  var GAclients = [], GAresources = [];
 	  for (var i = 0; i < clients.length; i++){
 	  	var nearbyRes = [];
 	  	for (var j = 0; j < resources.length; j++){
+	  		// if (i === 0){
+	  		// 	console.log("====>> createDatasetFromMap");
+	  		// 	console.log(insideCirle(resources[j].location[0], resources[j].location[1], clients[i].location[0], clients[i].location[1], clients[i].radius));
+	  		// 	console.log(clients[i]);
+	  		// 	console.log(resources[j]);
+	  		// }
 	  		if (insideCirle(resources[j].location[0], resources[j].location[1], clients[i].location[0], clients[i].location[1], clients[i].radius)){
 	  			nearbyRes.push(j);
 	  		}
@@ -244,8 +284,7 @@ $( document ).ready(function() {
 	  	}
 	  	GAresources.push(newResource);
 	  }
-	 
-	  return [GAclients, GAresources];
+	  return [GAclients, GAresources]
 	}
 
 
@@ -263,9 +302,10 @@ $( document ).ready(function() {
 		var res = createDatasetFromMap();
 		GAclients = res[0];
 		GAresources = res[1];
+
 		geneticAlgorithm.updateDataset(GAclients, GAresources);
-		var result = geneticAlgorithm.runGA();
-		matchingResult = result.matchingClients; //[[R1,R2],[R2,],[R1]]
+		bestResult = geneticAlgorithm.runGA();
+		matchingResult = bestResult.matchingClients; //[[R1,R2],[R2,],[R1]]
 
 	}
 
@@ -282,13 +322,13 @@ $( document ).ready(function() {
 
 		if (type === "client") {
 			// $('#popup_div').text("OK" ).css({left:x,top:y}).show();
-			$('#popup_div').text("Services: " + node.services).css({left:x,top:y}).css({color:"red"}).show();
+			$('#popup_div').text("Client "+ node.clientID +". Services: " + node.services).css({left:x,top:y}).css({color:"red"}).show();
 			var circleX = canvasLeft + node.location[0] - node.radius;
 			var circleY = canvasTop + node.location[1] - node.radius;
 			$('#circle').css({width:  node.radius * 2, height:  node.radius * 2, left:circleX,top:circleY, "border-radius": node.radius }).css({color:"red"}).show();
 		} else if (type === "resource") {
 			// $('#popup_div').text("OK" ).css({left:x,top:y}).show();
-			$('#popup_div').text("Type: " + node.serviceType + ". Capacity: " + node.maxClients).css({left:x,top:y}).css({color:"blue"}).show();
+			$('#popup_div').text("ID " + node.resourceID +". Type: " + node.serviceType + ". Capacity: " + node.maxClients).css({left:x,top:y}).css({color:"blue"}).show();
 			$('#circle').hide();
 		} else {
 			$('#popup_div').hide();
@@ -300,7 +340,6 @@ $( document ).ready(function() {
 	    
 	    var x = event.pageX - canvasLeft,
 	        y = event.pageY - canvasTop;
-	    console.log("Hovering");
 	    var node = findNodeAtXY(x, y);
 	    displayInfo(node.type, node.node, event.pageX, event.pageY)
 	};
@@ -323,6 +362,7 @@ $( document ).ready(function() {
 					var selectedServices = getSelectedServices();
 					$("#clientModal").modal("hide");
 					var newClient = {
+						clientID: clients.length,
 						location: [x, y],
 						services: selectedServices,
 						radius: MAX_RANGE_PER_CLIENT

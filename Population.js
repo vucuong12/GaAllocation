@@ -1,5 +1,4 @@
-var MAX_GENERATIONS = 1000;
-var ELITISM_NUM = Math.floor(MAX_GENERATIONS / 20);
+
 // The Nature of Code
 // Daniel Shiffman
 // http://natureofcode.com
@@ -23,19 +22,44 @@ function Population(clients, resources, m, num) {
   this.nResources = resources.length;
   this.mutationRate = m;             // Mutation rate
   this.perfectScore = 1;
+  this.nearbyResForClientByType = [];
 
   this.best = "";
 
   this.population = [];
-  for (var i = 0; i < num; i++) {
-    this.population.push(new DNA(clients, resources));
-  }
+
   this.matingPool = [];
   this.accumulativeProb = [];
+
+  this.createNearbyResForClientByType = function(GAclients, GAresources) {
+      for (var clientID = 0; clientID < GAclients.length; clientID++){
+          var oneClient = {};
+          for (var i = 0; i < GAclients[clientID].nearbyResources.length; i++){
+            var resourceType = GAresources[GAclients[clientID].nearbyResources[i]].type;
+            if (oneClient[resourceType.toString()]){
+                oneClient[resourceType.toString()].push(GAclients[clientID].nearbyResources[i])
+            } else {
+                oneClient[resourceType.toString()] = [-1, GAclients[clientID].nearbyResources[i]];
+            }
+          }
+
+          
+          this.nearbyResForClientByType.push(oneClient);
+      }
+      // console.log("nearbyResForClientByType");
+      // console.log(this.nearbyResForClientByType);
+      // console.log(GAclients);
+      // console.log(GAresources);
+  }
+  this.createNearbyResForClientByType(clients, resources);
+  for (var i = 0; i < num; i++) {
+    this.population.push(new DNA(clients, resources, this.nearbyResForClientByType));
+  }
 
 
   // Fill our fitness array with a value for every member of the population
   this.calcFitness = function() {
+    //console.log("calcFitness " + this.generations + " . Length population = " + this.population.length );
     for (var i = 0; i < this.population.length; i++) {
       this.population[i].calcFitness();
     }
@@ -68,7 +92,6 @@ function Population(clients, resources, m, num) {
   }
 
   this.naturalSelection = function(){
-    console.log("Run ");
     this.accumulativeProb = [];
 
     var totalFitness = 0;
@@ -184,8 +207,10 @@ function Population(clients, resources, m, num) {
     }
 
     this.best = this.population[index].getMatching();
-    if (this.getGenerations() % 10 === 0){
-      //console.log(this.getBest().maxClients);
+    if (this.getGenerations() % VIEW_RATE === 0){
+      
+      console.log("Generations: " + this.getGenerations() + ": " + this.getBest().maxClients + ". Fitness: " + this.getBest().fitness + ". nCapacityViolations: " + this.getBest().nCapacityViolations);
+      //printAttributes(this.getBest(), ["maxClients", "fitness","nConnectedClients", "nTotalValidCon", "nCapacityViolations"])
     }
     if (this.generations === MAX_GENERATIONS || worldrecord === this.perfectScore) {
       this.finished = true;
