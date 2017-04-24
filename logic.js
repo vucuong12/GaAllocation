@@ -244,10 +244,10 @@ $( document ).ready(function() {
 	  clients.push({services: [0,1], nearbyResources: [0,1,2,3]})
 
 	  //Resources
-	  resources.push({"type": 1, "maxClient": 2});
-	  resources.push({"type": 0, "maxClient": 1});
-	  resources.push({"type": 1, "maxClient": 2});
-	  resources.push({"type": 0, "maxClient": 2});
+	  resources.push({"type": 1, "maxClients": 2});
+	  resources.push({"type": 0, "maxClients": 1});
+	  resources.push({"type": 1, "maxClients": 2});
+	  resources.push({"type": 0, "maxClients": 2});
 	  return [clients, resources];
 	}
 
@@ -260,12 +260,6 @@ $( document ).ready(function() {
 	  for (var i = 0; i < clients.length; i++){
 	  	var nearbyRes = [];
 	  	for (var j = 0; j < resources.length; j++){
-	  		// if (i === 0){
-	  		// 	console.log("====>> createDatasetFromMap");
-	  		// 	console.log(insideCirle(resources[j].location[0], resources[j].location[1], clients[i].location[0], clients[i].location[1], clients[i].radius));
-	  		// 	console.log(clients[i]);
-	  		// 	console.log(resources[j]);
-	  		// }
 	  		if (insideCirle(resources[j].location[0], resources[j].location[1], clients[i].location[0], clients[i].location[1], clients[i].radius)){
 	  			nearbyRes.push(j);
 	  		}
@@ -280,7 +274,7 @@ $( document ).ready(function() {
 	  for (var i = 0; i < resources.length; i++){
 	  	var newResource = {
 	  		type: resources[i].serviceType,
-	  		maxClient: resources[i].maxClients
+	  		maxClients: resources[i].maxClients
 	  	}
 	  	GAresources.push(newResource);
 	  }
@@ -305,6 +299,7 @@ $( document ).ready(function() {
 
 		geneticAlgorithm.updateDataset(GAclients, GAresources);
 		bestResult = geneticAlgorithm.runGA();
+
 		matchingResult = bestResult.matchingClients; //[[R1,R2],[R2,],[R1]]
 
 	}
